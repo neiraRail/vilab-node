@@ -39,6 +39,7 @@ class Nodo
     void enviarEventos();
     bool enviarVector(int m);
     void enviarVectores();
+    void enviarVectores2(int nvectores);
     void eliminarEventos();
     void alDetectarEvento(std::function<void()> fn);
     int event =-1;
