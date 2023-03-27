@@ -180,45 +180,66 @@ void Nodo::verVectores(){
 }
 
 void Nodo::enviarVectores2(int nvectores){
+  int httplen = nvectores*358;
   WiFiClient client;
-  if(client.connect("192.168.43.113", 8080)) {
+  if(client.connect("192.168.18.3", 8080)) {
+    /*******************
+     * Enviar headers
+     *******************/
     client.print(F("POST ")); client.print(F("/file3")); client.print(F(" HTTP/1.1\r\n"));
-    client.print(F("Host: ")); client.print(F("192.168.43.113")); client.print(F("\r\n"));
+    client.print(F("Host: ")); client.print(F("192.168.18.3")); client.print(F("\r\n"));
     client.print(F("User-Agent: vilab_node/2.0\r\n"));
     client.print(F("Accept: */*\r\n"));
     client.print(F("Content-Type: application/json\r\n"));
-    client.print(F("Content-Length: ")); client.print("35880"); client.print(F("\r\n\r\n")); //8970 debe ser calculado dependiendo de la duración y el step
-    //comienza el objeto del body
+    client.print(F("Content-Length: ")); client.print(httplen); client.print(F("\r\n\r\n")); //8970 debe ser calculado dependiendo de la duración y el step
+
+    /***************
+     * Enviar body
+     **************/
     client.print(F("{\"data\":["));
     int len = 9;
-    while(this->nroEnviados < nvectores){
-      //Poner una condición extra.
+    int enviadosLocal = 0;
+    int intentos = 0; // Veces que se intenta buscar un vector, si este no aparece despues de 50 intentos, se termina de enviar el JSON.
+    
+    /* Dentro del body va una lista JSON con N vectores */
+    while(enviadosLocal < nvectores && intentos < 50){
+      Serial.println("enviados local es menos a nvectores");
       if(this->buffer[this->nroEnviados%50].isUsed == true){
         client.print(this->buffer[this->nroEnviados%50].toJson());
         len += 174; //LEN MINIMO DE UN JSON
-        Serial.print("Se envío vector nro: ");
-        Serial.println(this->nroEnviados);
-        Serial.print("modulo: ");
-        Serial.println(this->nroEnviados%50);
-        if(this->nroEnviados < nvectores-1){
+        
+        Serial.print("Se envío vector nro: "); Serial.println(this->nroEnviados); Serial.print("modulo: "); Serial.println(this->nroEnviados%50);
+
+        /* Agregar comas de separación menos en el último JSON */
+        if(enviadosLocal < nvectores-1){
           len +=1;
           client.print(",");
         }
+        
+        enviadosLocal++;
         this->nroEnviados++;
+        intentos = 0;
+      }else{
+        intentos++;
       }
-    delay(10);
+      /* Si la medición aun no está lista, tiempo de espera para consultar denuevo */
+      delay(10);
     }
     client.print("]}");
     len += 2;
-    for(int l = len; l<35880; l++){ //8970 debe ser calculado a partir de duración y el step
-      client.print("  "); //Considerar doblar o agregar constante
+    
+    /* Completar body con espacios en blanco para igualar largo del body con largo especificado en headers */
+    for(int l = len; l<httplen; l++){ 
+      client.print("  ");
     }
+    
     client.print("\r\n");
     client.flush();
-    //        Serial.print("Se terminó el envío, total len:");
-    //        Serial.println(len);
-    this->nroEnviados = 0;
   }
+  
+  /* TODO:
+   * Podriamos escribir todos los vectores en un archivo en SD o Flash.
+  */
 }
 
 
