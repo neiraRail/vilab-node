@@ -8,8 +8,8 @@ TaskHandle_t Task2;
 
 Nodo nodo;
 void setup(){
-  //nodo.iniciarOnline("railxalkan", "familiarailxalkan", "192.168.18.3");
-  nodo.iniciarOnline("RAILWIFI", "", "192.168.43.113");
+  nodo.iniciarOnline("railxalkan", "familiarailxalkan", "192.168.18.3");
+  //nodo.iniciarOnline("RAILWIFI", "", "192.168.43.113");
   Serial.print("setup ejecutandose en core: ");
   Serial.println(xPortGetCoreID());
   
@@ -26,9 +26,10 @@ void setup(){
 }
 
 
-int timestep = 100;
+int timestep = 100; //Mínimos de 100
 unsigned long eventDuration = 20000;
-int nvectores = eventDuration/timestep;
+//int nvectores = eventDuration/timestep;
+int nvectores = 1; //Entre [1 y eventDuration/timestep]. 1 es demasiado rápido, no es capaz, pero 10 es increiblemente bueno
 //int event_id = 0; //despues sacar de config.json
 
 void loop2(void * _){

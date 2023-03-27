@@ -1,3 +1,2 @@
 # 4
-Proyecto de desarrollo para implementar envío de archivos con conexión continua http, con el objetivo de acelerar el tiempo
-de envío y disminuir el atraso del envío con respecto a la captura.
+Proyecto de desarrollo para mejorar la implementación de envío con WifiClient, dotandolo de manejo de errores y de transmisión de datos en tiempo real, o por paquetes.
