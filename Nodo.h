@@ -1,7 +1,10 @@
+#include <Arduino.h>
+#include "SPIFFS.h"
+#include <WiFi.h>
+#include <ESP32_multipart.h>
 #include <Adafruit_MPU6050.h>
 #include <HTTPClient.h>
 
-#include "Arduino.h"
 class Lectura : public Printable
     {
         public:
@@ -30,8 +33,8 @@ class Nodo
   public:
     Nodo();
     void iniciar();
-    void iniciarOnline(const char* _ssid, const char* _password, const char* _server);
-    String pedirConfig(char* _server, int node);
+    void iniciarOnline(const char* _ssid, const char* _password);
+    String pedirConfig(const char* _server, int node);
     void iniciarOffline();
     bool conectarServer(const char*_server);
     void capturarEvento(int tiempo, float frequencia);

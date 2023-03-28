@@ -1,77 +1,85 @@
 #include "Nodo.h"
-#include "SPIFFS.h"
-#include <HTTPClient.h>
-#include "WiFi.h"
 #include <ArduinoJson.h>
 
-//Objetos task
+#define ID_NODO 1
+#define DEFAULT_SERVER "129.151.100.69"
+
+// Objetos task
 TaskHandle_t Task2;
 
 DynamicJsonDocument doc(2048);
 int timestep;
 unsigned long eventDuration;
 int nvectores;
-const char* ssid;
-const char* password;
+const char *ssid;
+const char *password;
 unsigned long time_reset;
 
-
 Nodo nodo;
-void setup(){
-  const char* server;
-  //nodo.iniciarOnline("RAILWIFI", "", "192.168.43.113");
+void setup()
+{
+  const char *server;
+  // nodo.iniciarOnline("RAILWIFI", "", "192.168.43.113");
   nodo.iniciarOnline("railxalkan", "familiarailxalkan", "129.151.100.69");
-  String confg = nodo.pedirConfig("129.151.100.69", 1);
-  
+  String confg = nodo.pedirConfig(DEFAULT_SERVER, ID_NODO);
+
   DeserializationError error = deserializeJson(doc, confg);
-  if (error) {
+  if (error)
+  {
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.c_str());
-    for(;;);
+    for (;;)
+      ;
   }
-  ssid = (const char*) doc["ssid"];
-  password = (const char*) doc["password"];
-  server = (const char*)  doc["serverREST"];
-  eventDuration = (unsigned long) doc["time_event"];
-  timestep = (int) doc["delay_sensor"];
-  time_reset = (int) doc["time_reset"];
-  nvectores = (int) doc["batch_size"];
+  ssid = (const char *)doc["ssid"];
+  password = (const char *)doc["password"];
+  server = (const char *)doc["serverREST"];
+  eventDuration = (unsigned long)doc["time_event"];
+  timestep = (int)doc["delay_sensor"];
+  time_reset = (int)doc["time_reset"];
+  nvectores = (int)doc["batch_size"];
 
-  if(nodo.conectarServer(server)){
+  if (nodo.conectarServer(server))
+  {
     Serial.println("Server REST OK");
   }
-  else{
+  else
+  {
     Serial.println("Server REST ERROR");
   }
-  
-  //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
+
+  // create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
   xTaskCreatePinnedToCore(
-       loop2,                 /* Task function. */
-       "Enviar archivos",     /* name of task. */
-       10000,                 /* Stack size of task */
-       NULL,                  /* parameter of the task */
-       1,                     /* priority of the task */
-       &Task2,                /* Task handle to keep track of created task */
-       !ARDUINO_RUNNING_CORE);/* pin task to core 1 */
-    delay(500); 
+      loop2,                  /* Task function. */
+      "Enviar archivos",      /* name of task. */
+      10000,                  /* Stack size of task */
+      NULL,                   /* parameter of the task */
+      1,                      /* priority of the task */
+      &Task2,                 /* Task handle to keep track of created task */
+      !ARDUINO_RUNNING_CORE); /* pin task to core 1 */
+  delay(500);
 }
 
-void loop2(void * _){
+void loop2(void *_)
+{
   Serial.print("loop2 ejecutandose en core: ");
   Serial.println(xPortGetCoreID());
   delay(2000);
-  while(true){
-    if(nodo.isEvent){
+  while (true)
+  {
+    if (nodo.isEvent)
+    {
       nodo.enviarVectores2(nvectores);
     }
-    delay(timestep/2);
+    delay(timestep / 2);
   }
 }
 
-
 unsigned long previousMillis = 0;
-void loop(){
-  nodo.alDetectarEvento( []() {
+void loop()
+{
+  nodo.alDetectarEvento([]()
+                        {
     unsigned long start = millis();
     previousMillis = millis();
     while (previousMillis - start < eventDuration) {
@@ -80,7 +88,6 @@ void loop(){
         nodo.capturarVector();
         previousMillis = currentMillis;
       }
-    }
-  });
-  delay(2000); //Esperar 1 segundo para evitar detectar otro altiro
+    } });
+  delay(2000); // Esperar 1 segundo para evitar detectar otro altiro
 }

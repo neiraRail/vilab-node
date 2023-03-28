@@ -1,10 +1,4 @@
 #include "Nodo.h"
-#include <Arduino.h>
-#include "SPIFFS.h"
-#include <Adafruit_MPU6050.h>
-#include <HTTPClient.h>
-#include <WiFi.h>
-#include <ESP32_multipart.h>
 
 #define BUFFER_SIZE 50
 
@@ -12,6 +6,9 @@ Nodo::Nodo(){
   
 }
 
+void _restart(){
+  ESP.restart();
+}
 
 void Nodo::_iniciarSPIFFS(){
   Serial.println("Incializando SPIFFS...");
@@ -50,9 +47,6 @@ void Nodo::_iniciarMPU(){
   this->mpu.setMotionInterrupt(true);
 }
 
-void _restart(){
-  ESP.restart();
-}
 
 void Nodo::_iniciarWIFI(const char* _ssid, const char* _password){
   unsigned long mytime;
@@ -113,7 +107,7 @@ bool Nodo::conectarServer(const char* server){
   return (httpCode == 200);
 }
 
-String Nodo::pedirConfig(char* _server, int node){
+String Nodo::pedirConfig(const char* _server, int node){
   Serial.println("Obteniendo configuración");
   
   char initurl[40];
@@ -136,7 +130,7 @@ String Nodo::pedirConfig(char* _server, int node){
   return confg;
 }
 
-void Nodo::iniciarOnline(const char* _ssid, const char* password, const char* _server){
+void Nodo::iniciarOnline(const char* _ssid, const char* password){
   Serial.begin(115200);
   while (!Serial)
     delay(100);
@@ -145,13 +139,6 @@ void Nodo::iniciarOnline(const char* _ssid, const char* password, const char* _s
   _iniciarSPIFFS();
   _iniciarMPU();  
   _iniciarWIFI(_ssid, password);
-
-  if(conectarServer(this->_server)){
-    Serial.println("Server REST OK");
-  }
-  else{
-    Serial.println("Server REST ERROR");
-  }
   
   Serial.println("Nodo incializado ONLINE");
 }
