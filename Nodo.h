@@ -4,6 +4,7 @@
 #include <ESP32_multipart.h>
 #include <Adafruit_MPU6050.h>
 #include <HTTPClient.h>
+#include <ArduinoJson.h>
 
 class Lectura : public Printable
     {
@@ -34,7 +35,8 @@ class Nodo
     Nodo();
     void iniciar();
     void iniciarOnline(const char* _ssid, const char* _password);
-    String pedirConfig(const char* _server, int node);
+    String _pedirConfig(const char* _server, int node);
+    String obtenerConfig();
     void iniciarOffline();
     bool conectarServer(const char*_server);
     Lectura capturarVector();

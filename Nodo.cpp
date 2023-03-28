@@ -103,7 +103,7 @@ bool Nodo::conectarServer(const char* server){
   return (httpCode == 200);
 }
 
-String Nodo::pedirConfig(const char* _server, int node){
+String Nodo::_pedirConfig(const char* _server, int node){
   Serial.println("Obteniendo configuración");
   
   char initurl[40];
@@ -124,6 +124,39 @@ String Nodo::pedirConfig(const char* _server, int node){
   }
   http.end();
   return confg;
+}
+
+String Nodo::obtenerConfig(){
+  //Obtener configuración de archivos locales
+  DynamicJsonDocument doc(2048);
+  String localconfg;
+  File archivo = SPIFFS.open("config.json");
+  if (archivo) {
+        while (archivo.available()) {
+            localconfg += archivo.readString();
+        }
+        archivo.close();
+        Serial.print(localconfg);
+    } else {
+        Serial.println("Error al abrir el archivo de configuración");
+        for(;;);
+    }
+  DeserializationError error = deserializeJson(doc, localconfg);
+  if (error){
+    Serial.print(F("deserializeJson() failed en local: "));
+    Serial.println(error.c_str());
+    for (;;);
+  }
+  //Conectar WIFI
+  _iniciarWIFI(doc["ssid"], doc["password"]);
+  //Pedir configuración internet
+  String remoteconf = this->_pedirConfig(doc["serverREST"], doc["node"]);
+  if(remoteconf == ""){
+    return localconfg;
+  }
+  else{
+    return remoteconf;
+  }
 }
 
 void Nodo::iniciarOnline(const char* _ssid, const char* password){

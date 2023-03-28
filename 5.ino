@@ -1,5 +1,4 @@
 #include "Nodo.h"
-#include <ArduinoJson.h>
 
 #define ID_NODO 1
 #define DEFAULT_SERVER "129.151.100.69"
@@ -19,17 +18,15 @@ Nodo nodo;
 void setup()
 {
   const char *server;
-  // nodo.iniciarOnline("RAILWIFI", "");
-  nodo.iniciarOnline("railxalkan", "familiarailxalkan");
-  String confg = nodo.pedirConfig(DEFAULT_SERVER, ID_NODO);
+  nodo.iniciarOffline();
+  String confg = nodo.obtenerConfig();
 
   DeserializationError error = deserializeJson(doc, confg);
   if (error)
   {
     Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.c_str());
-    for (;;)
-      ;
+    for (;;);
   }
   ssid = (const char *)doc["ssid"];
   password = (const char *)doc["password"];
@@ -39,6 +36,7 @@ void setup()
   time_reset = (int)doc["time_reset"];
   nvectores = (int)doc["batch_size"];
 
+  nodo.iniciarOnline(ssid, password);
   if (nodo.conectarServer(server))
   {
     Serial.println("Server REST OK");
@@ -48,7 +46,6 @@ void setup()
     Serial.println("Server REST ERROR");
   }
 
-  // create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
   xTaskCreatePinnedToCore(
       loop2,                  /* Task function. */
       "Enviar archivos",      /* name of task. */
@@ -60,21 +57,11 @@ void setup()
   delay(500);
 }
 
-void loop2(void *_)
-{
-  Serial.print("loop2 ejecutandose en core: ");
-  Serial.println(xPortGetCoreID());
-  delay(2000);
-  while (true)
-  {
-    if (nodo.isEvent)
-    {
-      nodo.enviarVectores(nvectores);
-    }
-    delay(timestep / 2);
-  }
-}
-
+/*****************************************************
+ * Loop principal, se encarga de capturar mediciones
+ * cada 'timestep' milisegundos y por un periodo de
+ * tiempo 'eventDuration'
+ ****************************************************/
 unsigned long previousMillis = 0;
 void loop()
 {
@@ -90,4 +77,24 @@ void loop()
       }
     } });
   delay(2000); // Esperar 1 segundo para evitar detectar otro altiro
+}
+
+
+/*****************************************************
+ * Loop secundario, se encarga de enviar los vectores
+ * en paquetes de 'nvectores'
+ ****************************************************/
+void loop2(void *_)
+{
+  Serial.print("loop2 ejecutandose en core: ");
+  Serial.println(xPortGetCoreID());
+  delay(2000);
+  while (true)
+  {
+    if (nodo.isEvent) //&& nodo.sendDone
+    {
+      nodo.enviarVectores(nvectores);
+    }
+    delay(timestep / 2);
+  }
 }

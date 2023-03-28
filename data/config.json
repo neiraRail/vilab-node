@@ -1,0 +1,13 @@
+{
+    "batch_size": 10,
+    "delay_sensor": 100,
+    "detail": "Nodo Rail internet UFRO",
+    "node": 1,
+    "password": "CEIS.2023",
+    "serverREST": "129.151.100.69",
+    "serverREST2": "",
+    "ssid": "CEISUFRO",
+    "time_event": 20000,
+    "time_reset": 24,
+    "token": "1122334455"
+}
