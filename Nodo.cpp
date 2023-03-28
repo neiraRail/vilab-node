@@ -80,10 +80,6 @@ void Nodo::iniciarOffline(){
   Serial.println("Nodo inicializado OFFLINE");
 }
 
-void Nodo::iniciar(){
-  this->iniciarOnline("railxalkan", "familiarailxalkan", "129.151.100.69");
-}
-
 bool Nodo::conectarServer(const char* server){
   if(!this->conectado){
     Serial.println("No se está conectado a internet");
@@ -190,7 +186,7 @@ void Nodo::verVectores(){
   }
 }
 
-void Nodo::enviarVectores2(int nvectores){
+void Nodo::enviarVectores(int nvectores){
   int httplen = nvectores*358;
   WiFiClient client;
   if(client.connect(this->_server, 8080)) {
@@ -257,43 +253,6 @@ void Nodo::enviarVectores2(int nvectores){
 }
 
 
-
-void Nodo::enviarVectores(){
-  for(int i=this->nroEnviados%BUFFER_SIZE; i<BUFFER_SIZE; i++){
-    if (this->buffer[i].isUsed) {
-      if(this->enviarVector(i)){
-        Serial.print("Enviado elemento: ");
-        Serial.println(this->nroEnviados%BUFFER_SIZE);
-        this->nroEnviados++;
-      }
-      else{
-        //Guardar en archivo.
-        Serial.println("Problema al enviar");
-        break;
-      }
-    }
-    else{
-      //Serial.println("Lectura isUsed es falso");
-      break;
-      }
-    }
-  }
-bool Nodo::enviarVector(int m){
-  if(!this->conectado){
-    Serial.println("No se está conectado a internet");
-    return false;
-  }
-  //Serial.println(url);
-  
-  //Enviar a endpoint de vectores.
-  HTTPClient http;
-  int httpCode = http.POST(this->buffer[m].toJson());
-  String payload = http.getString();
-  //Serial.println(httpCode);
-  //Serial.println(payload);
-  return (httpCode == 200);
-}
-
 void Nodo::alDetectarEvento(std::function<void()> fn){
   Serial.println("Esperando evento...");
   while(!this->mpu.getMotionInterruptStatus()){
@@ -305,7 +264,6 @@ void Nodo::alDetectarEvento(std::function<void()> fn){
   fn();
   this->isEvent = false;
 }
-
 
 
 /* CLASE LETURA*/
@@ -429,139 +387,4 @@ size_t Lectura::printTo(Print& p) const
     bytes += p.print("\"gyr_y\":"); bytes += p.print(float2s(this->gyro[1])); bytes += p.write(',');
     bytes += p.print("\"gyr_z\":"); bytes += p.print(float2s(this->gyro[2])); bytes += p.write('}');
     return bytes;
-}
-
-void Nodo::eliminarEventos(){
-    File root = SPIFFS.open("/");
-    File file = root.openNextFile();
-    while(file){
-      String fileName = file.name();
-      if(fileName.startsWith("evento")){
-          SPIFFS.remove("/"+fileName);
-      }
-      file = root.openNextFile();
-    }
-}
-
-void Nodo::enviarEventos(){
-  if(!this->conectado){
-    Serial.println("No se está conectado a internet");
-    return;
-  }
-  // Abre el directorio raíz del sistema de archivos
-  File root = SPIFFS.open("/");
-  if (!root) {
-    Serial.println("Error al abrir el directorio raíz");
-    return;
-  }
-
-  // Contador para contar el número de archivos encontrados
-  int count = 0;
-
-  // Recorre todos los archivos del directorio raíz
-  //Cambiar a while(continuar) y poner if(file) dentro para poder manejar los errores
-  File file = root.openNextFile();
-  while (file) {
-    // Verifica si el nombre del archivo comienza con "evento"
-    if (String(file.name()).startsWith("evento")) {
-      // Envía el archivo utilizando la función multipart.sendFile
-      ESP32_multipart multipart("129.151.100.69");
-      multipart.setPort(8080);
-      int result = multipart.sendFile("/files", file);
-      if (result == 0) {
-        Serial.println("Error al enviar el archivo " + String(file.name()));
-      } else {
-        // Elimina el archivo si se envía satisfactoriamente
-        Serial.println("Se envió el archivo "+String(file.name()));
-        SPIFFS.remove("/"+String(file.name()));
-      }
-      // Incrementa el contador
-      count++;
-    }
-    file = root.openNextFile();
-  }
-
-  // Si no se encontró ningún archivo, notifica por serial
-  if (count == 0) {
-    Serial.println("No se encontraron archivos de eventos en el sistema de archivos");
-  }
-  else{
-    Serial.println("Ya no hay más archivos");
-  }
-}
-
-
-
-
-String generarFilename() {
-  // Inicializa el contador de archivos
-  int fileCount = 0;
-
-  // Busca los archivos eventoXXX.json en el sistema de archivos
-  File root = SPIFFS.open("/");
-  File file = root.openNextFile();
-  while (file) {
-    // Verifica si el nombre del archivo comienza con "evento"
-    if (String(file.name()).startsWith("evento")) {
-      // Incrementa el contador de archivos
-      fileCount++;
-    }
-    // Busca el siguiente archivo
-    file = root.openNextFile();
-  }
-
-  // Genera el nombre del archivo con el siguiente número disponible
-  String filename = "/evento";
-  filename += String(fileCount + 1);
-  filename += ".json";
-
-  // Devuelve el nombre del archivo
-  return filename;
-}
-void Nodo::capturarEvento(int tiempo, float frequencia){
-  int sampleRate = 1000 / frequencia; // Calculate the sample rate in milliseconds
-  //Comenzamos a contar
-  unsigned long start = millis();
-  bool capturando = true;
-  String nombre = generarFilename();
-  //Abrir un archivo para escribir
-  File file = SPIFFS.open(nombre, FILE_WRITE);
-  if(!file){
-    Serial.println("Fallo al abrir archivo para escribir");
-    capturando = false;
-    return;
-  }
-  file.println("[");
-  //Contador de milisegundos para setear la frecuencia de muestreo
-  unsigned long previousMillis = 0;
-  while(capturando){
-    unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= sampleRate) {
-      //Leer datos
-      sensors_event_t a, g, temp;
-      mpu.getEvent(&a, &g, &temp);
-      
-      Lectura lectura;
-      lectura.setValues(a.acceleration.v, g.gyro.v, temp.temperature);
-      
-      //Imprimir en archivo
-      //Serial.println(lectura.getAcc()[0]);
-      file.println(lectura);
-      
-      //Si ha pasado el tiempo asignado
-      if(millis()-start > tiempo){
-        // Finalizar evento
-        capturando = false;
-        file.println("]");
-        file.close();
-      }
-      else{
-        //Si no se finaliza, se pone una coma
-        file.println(",\n");
-      }
-      previousMillis = currentMillis;
-    }
-    
-  }
-  Serial.println("Evento guardado en "+nombre);  
 }

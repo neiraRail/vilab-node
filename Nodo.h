@@ -37,26 +37,21 @@ class Nodo
     String pedirConfig(const char* _server, int node);
     void iniciarOffline();
     bool conectarServer(const char*_server);
-    void capturarEvento(int tiempo, float frequencia);
     Lectura capturarVector();
     void verVectores();
-    void enviarEventos();
-    bool enviarVector(int m);
-    void enviarVectores();
-    void enviarVectores2(int nvectores);
-    void eliminarEventos();
+    void enviarVectores(int nvectores);
     void alDetectarEvento(std::function<void()> fn);
+    
     int event =-1;
     int isEvent = false;
     int nroEnviados = 0;
     Lectura buffer[50];
   private:
-    Adafruit_MPU6050 mpu; //Dependencia
     void _iniciarSPIFFS();
     void _iniciarWIFI(const char* _ssid, const char* _password);
     void _iniciarMPU();
+    Adafruit_MPU6050 mpu; //Dependencia
+    int node = 1;
     const char* _server   = "129.151.100.69"; //IP del servidor de envio de archivos
     bool conectado = false;
-    int node = 2;
-    
 };

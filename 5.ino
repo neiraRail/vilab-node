@@ -19,8 +19,8 @@ Nodo nodo;
 void setup()
 {
   const char *server;
-  // nodo.iniciarOnline("RAILWIFI", "", "192.168.43.113");
-  nodo.iniciarOnline("railxalkan", "familiarailxalkan", "129.151.100.69");
+  // nodo.iniciarOnline("RAILWIFI", "");
+  nodo.iniciarOnline("railxalkan", "familiarailxalkan");
   String confg = nodo.pedirConfig(DEFAULT_SERVER, ID_NODO);
 
   DeserializationError error = deserializeJson(doc, confg);
@@ -69,7 +69,7 @@ void loop2(void *_)
   {
     if (nodo.isEvent)
     {
-      nodo.enviarVectores2(nvectores);
+      nodo.enviarVectores(nvectores);
     }
     delay(timestep / 2);
   }
