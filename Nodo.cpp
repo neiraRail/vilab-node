@@ -96,19 +96,44 @@ bool Nodo::conectarServer(const char* server){
     return 0;
   }
   this->_server = server;
+
+  HTTPClient http;
   char url[40];
   sprintf(url, "http://%s:%d%s", server, 8080, "/status");
   Serial.println(url);
-  this->http.begin(url); //GET endpoint
+  http.begin(url); //GET endpoint
     
   Serial.println("Probando API..."); //Json format
   int httpCode = http.GET();
     
-  String payload = this->http.getString();
+  String payload = http.getString();
   Serial.println(httpCode);
   Serial.println(payload);
   http.end();
   return (httpCode == 200);
+}
+
+String Nodo::pedirConfig(char* _server, int node){
+  Serial.println("Obteniendo configuración");
+  
+  char initurl[40];
+  sprintf(initurl, "http://%s:%d%s", _server, 8080, "/nodes/init");
+  
+  HTTPClient http; 
+  http.begin(initurl); 
+  http.addHeader("Content-Type", "application/json");
+  char body[12]; sprintf(body, "{\"node\":%d}",node);
+  int httpcode = http.POST(body);
+  String confg;
+  if(httpcode == 200){
+    confg = http.getString();
+    Serial.println(confg);
+  }else{
+    confg = "";
+    //return = _getConfigFromFile();
+  }
+  http.end();
+  return confg;
 }
 
 void Nodo::iniciarOnline(const char* _ssid, const char* password, const char* _server){
@@ -118,17 +143,16 @@ void Nodo::iniciarOnline(const char* _ssid, const char* password, const char* _s
   delay(1000);
   
   _iniciarSPIFFS();
-  _iniciarMPU();
+  _iniciarMPU();  
   _iniciarWIFI(_ssid, password);
-  if(conectarServer(_server)){
+
+  if(conectarServer(this->_server)){
     Serial.println("Server REST OK");
   }
   else{
     Serial.println("Server REST ERROR");
   }
-  sprintf(this->enviar_url, "http://%s:%d%s", this->_server, 8080, "/events");
-  this->http.begin(this->enviar_url);
-  this->http.addHeader("Content-Type", "application/json");
+  
   Serial.println("Nodo incializado ONLINE");
 }
 
@@ -182,12 +206,12 @@ void Nodo::verVectores(){
 void Nodo::enviarVectores2(int nvectores){
   int httplen = nvectores*358;
   WiFiClient client;
-  if(client.connect("192.168.18.3", 8080)) {
+  if(client.connect(this->_server, 8080)) {
     /*******************
      * Enviar headers
      *******************/
     client.print(F("POST ")); client.print(F("/file3")); client.print(F(" HTTP/1.1\r\n"));
-    client.print(F("Host: ")); client.print(F("192.168.18.3")); client.print(F("\r\n"));
+    client.print(F("Host: ")); client.print(F(this->_server)); client.print(F("\r\n"));
     client.print(F("User-Agent: vilab_node/2.0\r\n"));
     client.print(F("Accept: */*\r\n"));
     client.print(F("Content-Type: application/json\r\n"));
@@ -236,6 +260,9 @@ void Nodo::enviarVectores2(int nvectores){
     client.print("\r\n");
     client.flush();
   }
+  else{
+    Serial.println("Cliente no pudo conectar con servidor"); 
+  }
   
   /* TODO:
    * Podriamos escribir todos los vectores en un archivo en SD o Flash.
@@ -272,7 +299,8 @@ bool Nodo::enviarVector(int m){
   //Serial.println(url);
   
   //Enviar a endpoint de vectores.
-  int httpCode = this->http.POST(this->buffer[m].toJson());
+  HTTPClient http;
+  int httpCode = http.POST(this->buffer[m].toJson());
   String payload = http.getString();
   //Serial.println(httpCode);
   //Serial.println(payload);

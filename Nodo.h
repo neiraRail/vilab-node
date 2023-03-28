@@ -31,6 +31,7 @@ class Nodo
     Nodo();
     void iniciar();
     void iniciarOnline(const char* _ssid, const char* _password, const char* _server);
+    String pedirConfig(char* _server, int node);
     void iniciarOffline();
     bool conectarServer(const char*_server);
     void capturarEvento(int tiempo, float frequencia);
@@ -54,7 +55,5 @@ class Nodo
     const char* _server   = "129.151.100.69"; //IP del servidor de envio de archivos
     bool conectado = false;
     int node = 2;
-    char enviar_url[40];
-    HTTPClient http;
     
 };

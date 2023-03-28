@@ -2,16 +2,47 @@
 #include "SPIFFS.h"
 #include <HTTPClient.h>
 #include "WiFi.h"
+#include <ArduinoJson.h>
 
 //Objetos task
 TaskHandle_t Task2;
 
+DynamicJsonDocument doc(2048);
+int timestep;
+unsigned long eventDuration;
+int nvectores;
+const char* ssid;
+const char* password;
+unsigned long time_reset;
+
+
 Nodo nodo;
 void setup(){
-  nodo.iniciarOnline("railxalkan", "familiarailxalkan", "192.168.18.3");
+  const char* server;
   //nodo.iniciarOnline("RAILWIFI", "", "192.168.43.113");
-  Serial.print("setup ejecutandose en core: ");
-  Serial.println(xPortGetCoreID());
+  nodo.iniciarOnline("railxalkan", "familiarailxalkan", "129.151.100.69");
+  String confg = nodo.pedirConfig("129.151.100.69", 1);
+  
+  DeserializationError error = deserializeJson(doc, confg);
+  if (error) {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.c_str());
+    for(;;);
+  }
+  ssid = (const char*) doc["ssid"];
+  password = (const char*) doc["password"];
+  server = (const char*)  doc["serverREST"];
+  eventDuration = (unsigned long) doc["time_event"];
+  timestep = (int) doc["delay_sensor"];
+  time_reset = (int) doc["time_reset"];
+  nvectores = (int) doc["batch_size"];
+
+  if(nodo.conectarServer(server)){
+    Serial.println("Server REST OK");
+  }
+  else{
+    Serial.println("Server REST ERROR");
+  }
   
   //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
   xTaskCreatePinnedToCore(
@@ -25,35 +56,20 @@ void setup(){
     delay(500); 
 }
 
-
-int timestep = 100; //Mínimos de 100
-unsigned long eventDuration = 20000;
-//int nvectores = eventDuration/timestep;
-int nvectores = 1; //Entre [1 y eventDuration/timestep]. 1 es demasiado rápido, no es capaz, pero 10 es increiblemente bueno
-//int event_id = 0; //despues sacar de config.json
-
 void loop2(void * _){
   Serial.print("loop2 ejecutandose en core: ");
   Serial.println(xPortGetCoreID());
   delay(2000);
   while(true){
-    //bool test = nodo.buffer[nodo.nroEnviados%50];
-    //Serial.println(test.toJson());
     if(nodo.isEvent){
       nodo.enviarVectores2(nvectores);
-//DESCOMENTAR PARA TESTEAR CON 1 SOLO 
-//      while(){
-//        delay(2000);
-//      }
     }
-    //nodo.verVectores();
     delay(timestep/2);
   }
 }
 
 
 unsigned long previousMillis = 0;
-
 void loop(){
   nodo.alDetectarEvento( []() {
     unsigned long start = millis();
