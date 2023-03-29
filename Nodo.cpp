@@ -80,6 +80,9 @@ void Nodo::iniciarOffline(){
   Serial.println("Nodo inicializado OFFLINE");
 }
 
+/**********************************************************
+ * 
+ *********************************************************/
 bool Nodo::conectarServer(const char* server){
   if(!this->conectado){
     Serial.println("No se está conectado a internet");
@@ -103,6 +106,9 @@ bool Nodo::conectarServer(const char* server){
   return (httpCode == 200);
 }
 
+/**********************************************************
+ * 
+ *********************************************************/
 String Nodo::_pedirConfig(const char* _server, int node){
   Serial.print("Obteniendo configuración remota... ");
   
@@ -127,6 +133,9 @@ String Nodo::_pedirConfig(const char* _server, int node){
   return confg;
 }
 
+/**********************************************************
+ * 
+ *********************************************************/
 String Nodo::obtenerConfig(){
   //Obtener configuración de archivos locales
   DynamicJsonDocument doc(2048);
@@ -174,6 +183,11 @@ void Nodo::iniciarOnline(const char* _ssid, const char* password){
 }
 
 
+/**********************************************************
+ * Toma las medidas del sensor, crea un objeto Lectura y lo
+ * guarda en el último lugar disponible del buffer. Si el
+ * buffer se llena se empieza desde el principio.
+ *********************************************************/
 Lectura Nodo::capturarVector(){
   Lectura lectura;
   sensors_event_t a, g, temp;
@@ -213,6 +227,10 @@ Lectura Nodo::capturarVector(){
   return lectura;
 }
 
+
+/**********************************************************
+ * Muestra por Serial, todos los vecores del buffer
+ *********************************************************/
 void Nodo::verVectores(){
   for(int i=0; i<BUFFER_SIZE; i++){
     if(this->buffer[i].isUsed)
@@ -220,6 +238,12 @@ void Nodo::verVectores(){
   }
 }
 
+
+/**********************************************************
+ * Envía un paquete de vectores del buffer. Los vectores
+ * enviados van desde la posición this.nroEnviados%50 y los
+ * siguientes nvectores.
+ *********************************************************/
 void Nodo::enviarVectores(int nvectores){
   int httplen = nvectores*358;
   WiFiClient client;
@@ -287,6 +311,14 @@ void Nodo::enviarVectores(int nvectores){
 }
 
 
+/**********************************************************
+ * Decorador que ejecuta una función cuando el sensor
+ * detecta movimiento, usando MotionInterruptStatus().
+ * Cuando se detecta un evento, isEvent se vuelve true y
+ * isDone false. 
+ * Al finalizar el evento isEvent se vuelve false y isDone
+ * se mantendrá false.
+ *********************************************************/
 void Nodo::alDetectarEvento(std::function<void()> fn){
   Serial.println("Esperando evento...");
   while(!this->mpu.getMotionInterruptStatus()){
@@ -361,6 +393,10 @@ char* Lectura::toJson(){
           this->time_lap, this->node, this->event, this->acc[0], this->acc[1], this->acc[2], this->gyro[0], this->gyro[1], this->gyro[2], this->temp);
   return json;
 }
+
+/* 
+ *  Funciones para hacer de la clase Lectura "Printable"
+ */
 
 char * float2s(float f, unsigned int digits)
 {
