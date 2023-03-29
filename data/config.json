@@ -1,12 +1,12 @@
 {
     "batch_size": 10,
     "delay_sensor": 100,
-    "detail": "Nodo Rail internet UFRO",
+    "detail": "Nodo Rail internet casa",
     "node": 1,
-    "password": "CEIS.2023",
+    "password": "familiarailxalkan",
     "serverREST": "129.151.100.69",
     "serverREST2": "",
-    "ssid": "CEISUFRO",
+    "ssid": "railxalkan",
     "time_event": 20000,
     "time_reset": 24,
     "token": "1122334455"

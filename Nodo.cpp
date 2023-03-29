@@ -11,7 +11,7 @@ void _restart(){
 }
 
 void Nodo::_iniciarSPIFFS(){
-  Serial.println("Incializando SPIFFS...");
+  Serial.print("Incializando SPIFFS... ");
   if(!SPIFFS.begin(true)){
     Serial.println("No se pudo montar incializar SPIFFS, fijate que no haya algun problema con la placa ESP");
     return;
@@ -20,14 +20,14 @@ void Nodo::_iniciarSPIFFS(){
 }
 
 void Nodo::_iniciarMPU(){
-  Serial.println("Buscando acelerómetro MPU6050...");
+  Serial.print("Buscando acelerómetro MPU6050... ");
   if (!this->mpu.begin()) {
     Serial.println(F("No se ecnontró el chip MPU6050, porfavor fijate en la conexión con el sensor."));
     while (1) {
       delay(10);
     }
   }
-  Serial.println("MPU6050 OK");                 
+  Serial.println("MPU6050 OK");
 
   //Establecer el rango del acelerómetro y del giroscópio
   this->mpu.setAccelerometerRange(MPU6050_RANGE_4_G); //Rango del acelerómetro
@@ -104,7 +104,7 @@ bool Nodo::conectarServer(const char* server){
 }
 
 String Nodo::_pedirConfig(const char* _server, int node){
-  Serial.println("Obteniendo configuración");
+  Serial.print("Obteniendo configuración remota... ");
   
   char initurl[40];
   sprintf(initurl, "http://%s:%d%s", _server, 8080, "/nodes/init");
@@ -120,6 +120,7 @@ String Nodo::_pedirConfig(const char* _server, int node){
     Serial.println(confg);
   }else{
     confg = "";
+    Serial.println("No se logró obtener la configuración remota");
     //return = _getConfigFromFile();
   }
   http.end();
@@ -130,15 +131,15 @@ String Nodo::obtenerConfig(){
   //Obtener configuración de archivos locales
   DynamicJsonDocument doc(2048);
   String localconfg;
-  File archivo = SPIFFS.open("config.json");
+  File archivo = SPIFFS.open("/config.json");
   if (archivo) {
         while (archivo.available()) {
             localconfg += archivo.readString();
         }
         archivo.close();
-        Serial.print(localconfg);
+        Serial.println(localconfg);
     } else {
-        Serial.println("Error al abrir el archivo de configuración");
+        Serial.println("Error al abrir el archivo de configuración. Probablemente no existe");
         for(;;);
     }
   DeserializationError error = deserializeJson(doc, localconfg);
