@@ -61,10 +61,8 @@ void setup()
  * tiempo 'eventDuration'
  ****************************************************/
 unsigned long previousMillis = 0;
-void loop()
-{
-  nodo.alDetectarEvento([]()
-                        {
+void loop(){  
+  nodo.alDetectarEvento([](){
     unsigned long start = millis();
     previousMillis = millis();
     while (previousMillis - start < eventDuration) {
@@ -73,7 +71,8 @@ void loop()
         nodo.capturarVector();
         previousMillis = currentMillis;
       }
-    } });
+    } 
+  });
   delay(2000); // Esperar 1 segundo para evitar detectar otro altiro
 }
 
@@ -82,13 +81,15 @@ void loop()
  * Loop secundario, se encarga de enviar los vectores
  * en paquetes de 'nvectores'
  ****************************************************/
-void loop2(void *_)
-{
+void loop2(void *_){
   Serial.print("loop2 ejecutandose en core: ");
   Serial.println(xPortGetCoreID());
   delay(2000);
-  while (true)
-  { 
+  while (true) {
+    if(millis()>time_reset*3600000){
+      ESP.restart();
+    }
+     
     if(nodo.nroEnviados%(eventDuration/timestep) == 0){
       nodo.isDone = true;
     }
