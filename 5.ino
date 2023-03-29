@@ -44,6 +44,7 @@ void setup()
   else
   {
     Serial.println("Server REST ERROR");
+    for(;;);
   }
 
   xTaskCreatePinnedToCore(
