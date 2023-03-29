@@ -46,6 +46,7 @@ class Nodo
     
     int event =-1;
     int isEvent = false;
+    int isDone = true;
     int nroEnviados = 0;
     Lectura buffer[50];
   private:

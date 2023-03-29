@@ -295,6 +295,7 @@ void Nodo::alDetectarEvento(std::function<void()> fn){
   Serial.println("Evento detectado");
   this->event++;
   this->isEvent = true;
+  this->isDone = false;
   fn();
   this->isEvent = false;
 }

@@ -90,8 +90,12 @@ void loop2(void *_)
   Serial.println(xPortGetCoreID());
   delay(2000);
   while (true)
-  {
-    if (nodo.isEvent) //&& nodo.sendDone
+  { 
+    if(nodo.nroEnviados%(eventDuration/timestep) == 0){
+      nodo.isDone = true;
+    }
+    
+    if (nodo.isEvent || !nodo.isDone)
     {
       nodo.enviarVectores(nvectores);
     }
