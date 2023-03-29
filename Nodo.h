@@ -54,7 +54,7 @@ class Nodo
     void _iniciarWIFI(const char* _ssid, const char* _password);
     void _iniciarMPU();
     Adafruit_MPU6050 mpu; //Dependencia
-    int node = 1;
-    const char* _server   = "129.151.100.69"; //IP del servidor de envio de archivos
+    int node;
+    const char* _server; //IP del servidor de envio de archivos
     bool conectado = false;
 };

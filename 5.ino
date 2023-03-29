@@ -1,8 +1,5 @@
 #include "Nodo.h"
 
-#define ID_NODO 1
-#define DEFAULT_SERVER "129.151.100.69"
-
 // Objetos task
 TaskHandle_t Task2;
 
