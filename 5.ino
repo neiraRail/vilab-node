@@ -26,7 +26,7 @@ void setup(){
   }
   ssid = (const char *)doc["ssid"];
   password = (const char *)doc["password"];
-  server = (const char *)doc["serverREST"];
+  server = (const char *)doc["serverREST"]; //Solo la IP
   eventDuration = (unsigned long)doc["time_event"];
   timestep = (int)doc["delay_sensor"];
   time_reset = (int)doc["time_reset"];

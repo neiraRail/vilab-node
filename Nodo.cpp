@@ -1,6 +1,8 @@
 #include "Nodo.h"
 
 #define BUFFER_SIZE 50
+#define DEF_SSID "sensor"
+#define DEF_PSW "12345"
 
 Nodo::Nodo(){
   
@@ -149,7 +151,10 @@ void writeFile(const char * path, String message){
 
 
 /**********************************************************
- * 
+ * Busca y carga la config del Nodo. Si el nodo se está
+ * inicializando por primera vez, se conectara a 'sensor' y
+ * pedirá su config remota.
+ * Además guarda la config actualizada en memoria flash.
  *********************************************************/
 String Nodo::obtenerConfig(){
   DynamicJsonDocument doc(2048);
@@ -157,31 +162,33 @@ String Nodo::obtenerConfig(){
   
   if (!SPIFFS.exists("/config.json")) {
     Serial.println("Archivo de configuración no existe");
-    for(;;);
-  }
-  
-  File archivo = SPIFFS.open("/config.json", "r");
-  
-  if (archivo) {
-    while (archivo.available()) {
-      localconfg += archivo.readString();
-    }
-    archivo.close();
-    Serial.println(localconfg);
+    //Conectar WIFI
+    this->_iniciarWIFI(DEF_SSID, DEF_PSW);
   } 
-  
-  DeserializationError error = deserializeJson(doc, localconfg);
-  
-  if (error) {
-    Serial.print(F("deserializeJson() failed en local: "));
-    Serial.println(error.c_str());
-    for (;;);
+  else { 
+    File archivo = SPIFFS.open("/config.json", "r");
+    
+    if (archivo) {
+      while (archivo.available()) {
+        localconfg += archivo.readString();
+      }
+      archivo.close();
+      Serial.println(localconfg);
+    } 
+    
+    DeserializationError error = deserializeJson(doc, localconfg);
+    
+    if (error) {
+      Serial.print(F("deserializeJson() failed en local: "));
+      Serial.println(error.c_str());
+      for (;;);
+    }
+    
+    doc["start"] = doc["start"].as<int>() + 1;
+    
+    //Conectar WIFI
+    this->_iniciarWIFI(doc["ssid"], doc["password"]);
   }
-  
-  doc["start"] = doc["start"].as<int>() + 1;
-  
-  //Conectar WIFI
-  this->_iniciarWIFI(doc["ssid"], doc["password"]);
   
   //Pedir configuración internet
   String newconf = this->_pedirConfig(doc["serverREST2"], doc["node"], doc["start"]);
@@ -190,6 +197,7 @@ String Nodo::obtenerConfig(){
     writeFile("/config.json", newconf);
     return newconf;
   }
+  //Sino se encuentra conf remota, se utiliza y guarda la local con start+1
   serializeJson(doc, newconf);
   writeFile("/config.json", newconf);
   return newconf;
