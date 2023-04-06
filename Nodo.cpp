@@ -111,15 +111,13 @@ bool Nodo::conectarServer(const char* server){
  *********************************************************/
 String Nodo::_pedirConfig(const char* _serverConfig, int node, int start){
   Serial.print("Obteniendo configuración remota... ");
-  
-  char initurl[40];
-  sprintf(initurl, "http://%s:%d%s", _server, 8080, "/nodes/init");
-  
+    
   HTTPClient http; 
-  http.begin(initurl); 
+  http.begin(_serverConfig); 
   http.addHeader("Content-Type", "application/json");
   char body[25]; sprintf(body, "{\"node\":%d,\"start\":%d}",node, start);
   int httpcode = http.POST(body);
+  
   String confg;
   if(httpcode == 200){
     confg = http.getString();
@@ -127,7 +125,6 @@ String Nodo::_pedirConfig(const char* _serverConfig, int node, int start){
   }else{
     confg = "";
     Serial.println("No se logró obtener la configuración remota");
-    //return = _getConfigFromFile();
   }
   http.end();
   return confg;
@@ -187,7 +184,7 @@ String Nodo::obtenerConfig(){
   this->_iniciarWIFI(doc["ssid"], doc["password"]);
   
   //Pedir configuración internet
-  String newconf = this->_pedirConfig(doc["serverREST"], doc["node"], doc["start"]);
+  String newconf = this->_pedirConfig(doc["serverREST2"], doc["node"], doc["start"]);
   
   if(newconf != ""){
     writeFile("/config.json", newconf);

@@ -12,8 +12,7 @@ const char *password;
 unsigned long time_reset;
 
 Nodo nodo;
-void setup()
-{
+void setup(){
   const char *server;
   nodo.iniciarOffline();
   String confg = nodo.obtenerConfig();
