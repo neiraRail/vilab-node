@@ -35,7 +35,7 @@ class Nodo
     Nodo();
     void iniciar();
     void iniciarOnline(const char* _ssid, const char* _password);
-    String _pedirConfig(const char* _server, int node);
+    String _pedirConfig(const char* _server, int node, int start);
     String obtenerConfig();
     void iniciarOffline();
     bool conectarServer(const char*_server);
@@ -56,5 +56,7 @@ class Nodo
     Adafruit_MPU6050 mpu; //Dependencia
     int node;
     const char* _server; //IP del servidor de envio de archivos
+    const char* _restEvent;
+    const char* _restConfig;
     bool conectado = false;
 };

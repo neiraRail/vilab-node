@@ -109,7 +109,7 @@ bool Nodo::conectarServer(const char* server){
 /**********************************************************
  * 
  *********************************************************/
-String Nodo::_pedirConfig(const char* _server, int node){
+String Nodo::_pedirConfig(const char* _serverConfig, int node, int start){
   Serial.print("Obteniendo configuración remota... ");
   
   char initurl[40];
@@ -118,7 +118,7 @@ String Nodo::_pedirConfig(const char* _server, int node){
   HTTPClient http; 
   http.begin(initurl); 
   http.addHeader("Content-Type", "application/json");
-  char body[12]; sprintf(body, "{\"node\":%d}",node);
+  char body[25]; sprintf(body, "{\"node\":%d,\"start\":%d}",node, start);
   int httpcode = http.POST(body);
   String confg;
   if(httpcode == 200){
@@ -133,40 +133,69 @@ String Nodo::_pedirConfig(const char* _server, int node){
   return confg;
 }
 
+
+void writeFile(const char * path, String message){
+  File file = SPIFFS.open(path, FILE_WRITE);
+  if(!file){
+    Serial.println("Error al abrir el archivo para escribir");
+    return;
+  }
+  if(file.print(message)){
+    Serial.println("Archivo escrito");
+  } else {
+    Serial.println("Error al escribir");
+  }
+  file.close();
+}
+
+
+
+
 /**********************************************************
  * 
  *********************************************************/
 String Nodo::obtenerConfig(){
-  //Obtener configuración de archivos locales
   DynamicJsonDocument doc(2048);
   String localconfg;
-  File archivo = SPIFFS.open("/config.json");
+  
+  if (!SPIFFS.exists("/config.json")) {
+    Serial.println("Archivo de configuración no existe");
+    for(;;);
+  }
+  
+  File archivo = SPIFFS.open("/config.json", "r");
+  
   if (archivo) {
-        while (archivo.available()) {
-            localconfg += archivo.readString();
-        }
-        archivo.close();
-        Serial.println(localconfg);
-    } else {
-        Serial.println("Error al abrir el archivo de configuración. Probablemente no existe");
-        for(;;);
+    while (archivo.available()) {
+      localconfg += archivo.readString();
     }
+    archivo.close();
+    Serial.println(localconfg);
+  } 
+  
   DeserializationError error = deserializeJson(doc, localconfg);
-  if (error){
+  
+  if (error) {
     Serial.print(F("deserializeJson() failed en local: "));
     Serial.println(error.c_str());
     for (;;);
   }
+  
+  doc["start"] = doc["start"].as<int>() + 1;
+  
   //Conectar WIFI
-  _iniciarWIFI(doc["ssid"], doc["password"]);
+  this->_iniciarWIFI(doc["ssid"], doc["password"]);
+  
   //Pedir configuración internet
-  String remoteconf = this->_pedirConfig(doc["serverREST"], doc["node"]);
-  if(remoteconf == ""){
-    return localconfg;
+  String newconf = this->_pedirConfig(doc["serverREST"], doc["node"], doc["start"]);
+  
+  if(newconf != ""){
+    writeFile("/config.json", newconf);
+    return newconf;
   }
-  else{
-    return remoteconf;
-  }
+  serializeJson(doc, newconf);
+  writeFile("/config.json", newconf);
+  return newconf;
 }
 
 void Nodo::iniciarOnline(const char* _ssid, const char* password){
